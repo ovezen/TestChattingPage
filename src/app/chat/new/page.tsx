@@ -5,6 +5,7 @@ import { useState } from "react";
 import Summary from "./_components/Summary";
 import ThumbnailImage from "./_components/ThumbnailImage";
 import HashTags from "./_components/HashTags";
+import { createChatRoom } from "../_utils/chat";// Supabase의 함수 import
 
 const steps = ["Summary", "Thumbnail", "HashTags"];
 
@@ -26,6 +27,10 @@ export default function Funnel() {
     hashtags: [],
   });
 
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
   const handleNext = (data: Partial<FormDetails>, nextStep: string) => {
     setFormData((prev) => ({ ...prev, ...data }));
     next(nextStep);
@@ -35,7 +40,36 @@ export default function Funnel() {
     prev(prevStep);
   };
 
-  // 진행도 계산
+  const handleCreateChatRoom = async () => {
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+
+    try {
+      const userId = "98c6815b-62ce-4dc8-a36a-5078cb36f0d9"; // 실제 로그인 사용자 ID를 가져와야 함
+
+      const { success, error } = await createChatRoom(userId, {
+        title: formData.title,
+        subtitle: formData.subtitle,
+        description: formData.description,
+        hashtags: formData.hashtags,
+        thumbnailUrl: formData.thumbnail
+          ? URL.createObjectURL(formData.thumbnail)
+          : "",
+      });
+
+      if (!success) {
+        throw new Error(error);
+      }
+
+      setSuccess(true);
+    } catch (err) {
+      setError(String(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const currentStepIndex = steps.indexOf(currentStep);
   const progress = ((currentStepIndex + 1) / steps.length) * 100;
 
@@ -58,7 +92,14 @@ export default function Funnel() {
             />
           </Step>
           <Step name={steps[2]}>
-            <HashTags formData={formData} onPrev={() => handlePrev(steps[1])} />
+            <HashTags
+              formData={formData}
+              onPrev={() => handlePrev(steps[1])}
+              onCreateChatRoom={handleCreateChatRoom} // 로직 전달
+              loading={loading}
+              error={error}
+              success={success}
+            />
           </Step>
         </Funnel>
       </div>
