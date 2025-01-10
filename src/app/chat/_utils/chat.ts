@@ -60,26 +60,40 @@ export const enterAsAdmin = async (userId: string, roomId: string) => {
   }
 };
 
-// 채팅방 일반 멤버로 등록하기
+// 채팅방 일반 멤버로 등록하기(기존 멤버의 isActive 상태를 활용해서 입장 가능 여부 판단)
 export const enterAsMember = async (userId: string, roomId: string) => {
   try {
-    // Step 1: 중복 확인
+    // Step 1: 기존 멤버 상태 확인
     const { data: existingMember, error: checkError } = await supabase
       .from("chat_members")
-      .select("member_id, room_id")
+      .select("member_id, room_id, isActive")
       .eq("member_id", userId)
       .eq("room_id", roomId)
       .single();
 
     if (checkError && checkError.code !== "PGRST116") {
-      throw checkError; // PGRST116: 데이터가 없음을 나타냄
+      // PGRST116: 데이터가 없음을 나타냄
+      throw checkError;
     }
 
     if (existingMember) {
+      // 기존 멤버가 비활성화 상태인 경우, 활성화 처리
+      if (!existingMember.isActive) {
+        const { error: updateError } = await supabase
+          .from("chat_members")
+          .update({ isActive: true })
+          .match({ member_id: userId, room_id: roomId });
+
+        if (updateError) throw updateError;
+
+        return { success: true, message: "멤버가 다시 활성화되었습니다." };
+      }
+
+      // 이미 활성화된 멤버인 경우
       return { success: false, error: "이미 이 채팅방에 등록된 멤버입니다." };
     }
 
-    // Step 2: 멤버 추가
+    // Step 2: 멤버 새로 추가
     const { error: memberError } = await supabase.from("chat_members").insert({
       member_id: userId,
       room_id: roomId,
@@ -94,6 +108,41 @@ export const enterAsMember = async (userId: string, roomId: string) => {
     return { success: false, error: String(error) };
   }
 };
+
+// 채팅방 일반 멤버로 등록하기(기존)
+// export const enterAsMember = async (userId: string, roomId: string) => {
+//   try {
+//     // Step 1: 중복 확인
+//     const { data: existingMember, error: checkError } = await supabase
+//       .from("chat_members")
+//       .select("member_id, room_id")
+//       .eq("member_id", userId)
+//       .eq("room_id", roomId)
+//       .single();
+
+//     if (checkError && checkError.code !== "PGRST116") {
+//       throw checkError; // PGRST116: 데이터가 없음을 나타냄
+//     }
+
+//     if (existingMember) {
+//       return { success: false, error: "이미 이 채팅방에 등록된 멤버입니다." };
+//     }
+
+//     // Step 2: 멤버 추가
+//     const { error: memberError } = await supabase.from("chat_members").insert({
+//       member_id: userId,
+//       room_id: roomId,
+//       isAdmin: false,
+//       isActive: true,
+//     });
+
+//     if (memberError) throw memberError;
+
+//     return { success: true };
+//   } catch (error) {
+//     return { success: false, error: String(error) };
+//   }
+// };
 
 // 일반 멤버의 채팅방 퇴장하기(비활성화)
 export const exitChatRoom = async (userId: string, roomId: string) => {
