@@ -95,12 +95,12 @@ export const enterAsMember = async (userId: string, roomId: string) => {
   }
 };
 
-// 일반 멤버의 채팅방 퇴장하기
+// 일반 멤버의 채팅방 퇴장하기(비활성화)
 export const exitChatRoom = async (userId: string, roomId: string) => {
   try {
     const { error } = await supabase
       .from("chat_members")
-      .delete()
+      .update({ isActive: false })
       .match({ member_id: userId, room_id: roomId });
 
     if (error) throw error;
@@ -110,3 +110,19 @@ export const exitChatRoom = async (userId: string, roomId: string) => {
     return { success: false, error: String(error) };
   }
 };
+
+// 일반 멤버의 채팅방 퇴장하기(데이터 테이블에서 삭제)
+// export const exitChatRoom = async (userId: string, roomId: string) => {
+//   try {
+//     const { error } = await supabase
+//       .from("chat_members")
+//       .delete()
+//       .match({ member_id: userId, room_id: roomId });
+
+//     if (error) throw error;
+
+//     return { success: true };
+//   } catch (error) {
+//     return { success: false, error: String(error) };
+//   }
+// };
