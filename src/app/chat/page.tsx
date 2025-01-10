@@ -4,7 +4,7 @@
 import { createClient } from "@/lib/utils/supabase/client";
 import { useRouter } from "next/navigation"; // useRouter 사용
 import React from "react";
-import { enterAsMember } from "./_api/supabase";
+import { enterAsMember } from "./_utils/chat";
 import Image from "next/image";
 
 const supabase = createClient();
