@@ -60,8 +60,6 @@ export const enterAsAdmin = async (userId: string, roomId: string) => {
   }
 };
 
-const MAX_MEMBERS = 10;
-
 // 채팅방 일반 멤버로 등록하기
 export const enterAsMember = async (userId: string, roomId: string) => {
   try {
@@ -96,7 +94,6 @@ export const enterAsMember = async (userId: string, roomId: string) => {
     return { success: false, error: String(error) };
   }
 };
-
 
 // 일반 멤버의 채팅방 퇴장하기
 export const exitChatRoom = async (userId: string, roomId: string) => {
